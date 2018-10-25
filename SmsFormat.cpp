@@ -11,7 +11,10 @@
 //using namespace std;
 
 
-#define SAC "00"
+//#define SAC "00"
+static char SAC[102] = "+8613032551239";
+static const char * INTERNATIONAL_TYPE = "91"; 
+static const char * NATIONAL_TYPE = "81";
 #define PDU_TYPE "31"
 #define MR "00"
 #define PID "00"
@@ -172,7 +175,7 @@ int SMS_Format::decodeSCA(char* temp)
     mSCA.len = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
     printf("%s,%d, SCA-LEN[%d]\n", __func__, __LINE__, mSCA.len);
     if (mSCA.len == 0) {
-        printf("%s,%d, SCA len is 0, no privede SCA addr", __func__, __LINE__);
+        printf("%s,%d, SCA len is 0, no privede SCA addr \n", __func__, __LINE__);
         lastSize = BTYE1*2;
     }
     else {
@@ -196,19 +199,19 @@ int SMS_Format::decodePDUType(char* temp)
 {
     int lastSize = 0;
     memset(&mPDUTpe, 0, sizeof(struct PDUType));
-    printf("%s,%d, temp[%s]\n", __func__, __LINE__, temp);
-    printf("%s,%d, PDU[0][%c]\n", __func__, __LINE__, temp[0]);
-    printf("%s,%d, PDU[1][%c]\n", __func__, __LINE__, temp[1]);
+    printf("%s,%d, temp[%2s]\n\n", __func__, __LINE__, temp);
+    //printf("%s,%d, PDU[0][%c]\n", __func__, __LINE__, temp[0]);
+    //printf("%s,%d, PDU[1][%c]\n", __func__, __LINE__, temp[1]);
     mPDUTpe.tpRP = (temp[0] & 0x8) >> 3;
     mPDUTpe.tpUDHI = (temp[0] & 0x4) >>2;
     mPDUTpe.tpSRR = (temp[0] & 0x2) >> 1;
     mPDUTpe.tpVPF = (temp[0] & 0x1) + ((temp[1] & 0x8) >> 3);
-    printf("%s,%d, VPT[%d-%d-%d]\n", __func__, __LINE__, temp[0] & 0x1, temp[1] & 0x8, (temp[0] & 0x1) + (temp[1] & 0x8));
+    //printf("%s,%d, VPT[%d-%d-%d]\n", __func__, __LINE__, temp[0] & 0x1, temp[1] & 0x8, (temp[0] & 0x1) + (temp[1] & 0x8));
     mPDUTpe.tpRD = (temp[1] & 0x4) >>2;
     mPDUTpe.tpMTI = (temp[1] & 0x3);
-    printf("%s,%d, tpMTI[%d]\n", __func__, __LINE__, temp[1] & 0x3);
+    //printf("%s,%d, tpMTI[%d]\n", __func__, __LINE__, temp[1] & 0x3);
     lastSize = BTYE1*2;/*PDU-type is 1 byte*/
-    printf("%s,%d, PDU-type[%d-%d-%d-%d-%d-%d]\n", __func__, __LINE__, mPDUTpe.tpRP, mPDUTpe.tpUDHI, mPDUTpe.tpSRR,
+    printf("%s,%d, PDU-type[tpRP:%d-tpUDHI:%d-tpSRR:%d-tpVPF:%d-tpRD:%d-tpMTI:%d]\n", __func__, __LINE__, mPDUTpe.tpRP, mPDUTpe.tpUDHI, mPDUTpe.tpSRR,
         mPDUTpe.tpVPF, mPDUTpe.tpRD, mPDUTpe.tpMTI);
     return lastSize;
 }
@@ -465,8 +468,25 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
     int UDlen = strlen(ucs2Str)/2;
 
 /* SCA PDUType MR DA-len DA-tpe DAAddr PID DCS VP UDL UD*/
-    snprintf(pdu, pddLen, "%s%s%s%02X%s%s%s%s%s%02X%s", 
-    SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+
+    if (strcmp(SAC, "0") == 0) {
+        snprintf(pdu, pddLen, "%s%s%s%02X%s%s%s%s%s%02X%s", 
+            SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+    }
+    else if (SAC[0] == '+'){
+        char sca[56] = {0};
+        strcpy(sca, SAC+1);
+        formatNumber((sca));
+        int SCALen = strlen(sca)/2 + 1;
+        snprintf(pdu, pddLen, "%02x%s%s%s%s%02X%s%s%s%s%s%02X%s", 
+            SCALen, "91", sca, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+    }
+    else {
+        int SCALen = strlen(SAC)/2 + 1 + 1;
+        formatNumber((SAC));
+        snprintf(pdu, pddLen, "%02x%s%s%s%s%02X%s%s%s%s%s%02X%s", 
+            SCALen, "81", SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+    }
 
     printf("Encode SMS PDU\n");
     printf("[%s]\n", pdu);
