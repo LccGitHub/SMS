@@ -139,7 +139,7 @@ static void ucs2_to_str(const char16_t* ucs2Data,size_t ucs2Len, unsigned char *
     char tmp[5] = { 0 };
     for(i = 0; i < ucs2Len; ++i) {
        memset(tmp, 0, sizeof(tmp));
-       sprintf(tmp, "%04x", ucs2Data[i]);
+       sprintf(tmp, "%04X", ucs2Data[i]);
        strcat((char*)str_out, tmp);
     }
 }
@@ -475,9 +475,10 @@ int GsmSMSFormat::decodeUD(char* temp)
     }
     else if (mDCS == GSM8Bit) {
         unsigned char src[140] = {0};
+        XcharToAcii(mUD, src);
 
         memset(mSMSContext, 0, sizeof(mSMSContext));
-        gsmDecode8bit(mUD, mSMSContext, strlen((const char*)mUD));
+        gsmDecode8bit(src, mSMSContext, strlen((const char*)src));
         printf("%s,%d, SMS 8 BitContext \n", __func__, __LINE__);
     }
     else if (mDCS == USC2) {
