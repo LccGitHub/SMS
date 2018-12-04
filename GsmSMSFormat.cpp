@@ -5,7 +5,7 @@
 	> Created Time: Sat 29 Sep 2018 01:50:04 PM CST
  ************************************************************************/
 #include <string.h>
-#include "SmsFormat.h"
+#include "GsmSMSFormat.h"
 #include "GsmSMSUicode.h"
 #include "Unicode.h"
 //using namespace std;
@@ -159,7 +159,7 @@ static void str_to_hexstr(const unsigned char* ucs2Data,size_t ucs2Len, unsigned
     }
 }
 
-SMS_Format::SMS_Format(const char* pdu)
+GsmSMSFormat::GsmSMSFormat(const char* pdu)
 {
     char temp[1024] = {0};
     char tempLast[1024] = {0};
@@ -186,7 +186,7 @@ SMS_Format::SMS_Format(const char* pdu)
 * SCA-len SCA-type SCA-addr
 *  08       91      683110304105F0
 */
-int SMS_Format::decodeSCA(char* temp)
+int GsmSMSFormat::decodeSCA(char* temp)
 {
     int lastSize = 0;
     memset(&mSCA, 0, sizeof(struct NumAddr));
@@ -215,7 +215,7 @@ int SMS_Format::decodeSCA(char* temp)
 *tpRp tpUDHI tpSRR tpVPF tpRD tpMTI
 *0      1      1    00    0     00
 */
-int SMS_Format::decodePDUType(char* temp)
+int GsmSMSFormat::decodePDUType(char* temp)
 {
     int lastSize = 0;
     memset(&mPDUTpe, 0, sizeof(struct PDUType));
@@ -245,7 +245,7 @@ int SMS_Format::decodePDUType(char* temp)
 * mPDUTpe.tpMTI = 2, SMS-SBUMIT REPROT (MS->SMSC)
 * mPDUTpe.tpMTI = 2, SMS-COMMAND (MS->SMSC)
 */
-int SMS_Format::decodeMR(char* temp)
+int GsmSMSFormat::decodeMR(char* temp)
 {
     int lastSize = 0;
     if (mPDUTpe.tpMTI == 01) {
@@ -258,7 +258,7 @@ int SMS_Format::decodeMR(char* temp)
 /* decodeOA: decode OA
 * only decode SMS-DELIVER
 */
-int SMS_Format::decodeOA(char* temp)
+int GsmSMSFormat::decodeOA(char* temp)
 {
     int lastSize = 0;
     if (mPDUTpe.tpMTI == 0) {
@@ -290,7 +290,7 @@ int SMS_Format::decodeOA(char* temp)
 /* decodeOA: decode DA
 * only decode SMS-SUBMIT
 */
-int SMS_Format::decodeDA(char* temp)
+int GsmSMSFormat::decodeDA(char* temp)
 {
     int lastSize = 0;
     if (mPDUTpe.tpMTI == 1) {
@@ -316,7 +316,7 @@ int SMS_Format::decodeDA(char* temp)
     }
     return lastSize;
 }
-int SMS_Format::decodePID(char* temp)
+int GsmSMSFormat::decodePID(char* temp)
 {
     int lastSize = 0;
     mPID = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
@@ -331,7 +331,7 @@ int SMS_Format::decodePID(char* temp)
 * 10: USC2
 * 11: Reserved
 */
-int SMS_Format::decodeDCS(char* temp)
+int GsmSMSFormat::decodeDCS(char* temp)
 {
     int lastSize = 0;
     mDCS = (temp[1] & 0xC) >> 2;
@@ -365,7 +365,7 @@ int SMS_Format::decodeDCS(char* temp)
 *       Tp-VPF=2, this value is 1 byte,Provided by integer
 *       Tp-VPF=3, this value is 7 byte,
 */
-int SMS_Format::decodeVP(char* temp)
+int GsmSMSFormat::decodeVP(char* temp)
 {
     int lastSize = 0;
     if (mPDUTpe.tpVPF== 0x0) {
@@ -415,7 +415,7 @@ int SMS_Format::decodeVP(char* temp)
  * format :YY/MM/DD/HH/MM/SS/Time zone
  * only decode SMS-DELIVER
 */
-int SMS_Format::decodeSCTS(char* temp)
+int GsmSMSFormat::decodeSCTS(char* temp)
 {
     int lastSize = 0;
     if (mPDUTpe.tpMTI == 0) {
@@ -431,7 +431,7 @@ int SMS_Format::decodeSCTS(char* temp)
 *  Tp-UDHI=0, this value is none,
 *  Tp-UDHI=1, this value is 1 byte,
 */
-int SMS_Format::decodeUDL(char* temp)
+int GsmSMSFormat::decodeUDL(char* temp)
 {
     int lastSize = 0;
 
@@ -445,7 +445,7 @@ int SMS_Format::decodeUDL(char* temp)
 }
 
 
-int SMS_Format::decodeUD(char* temp)
+int GsmSMSFormat::decodeUD(char* temp)
 {
     int lastSize = 0;
     memset(mUD, 0, sizeof(mUD));
@@ -499,7 +499,7 @@ int SMS_Format::decodeUD(char* temp)
     return lastSize;
 }
 
-int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
+int GsmSMSFormat::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
 {
     int res = 0;
     char numTemp[128] = {0};
@@ -589,12 +589,12 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
 }
 
 
-bool SMS_Format::isMT(void)
+bool GsmSMSFormat::isMT(void)
 {
     return mPDUTpe.tpMTI == 1;
 }
 
-bool SMS_Format::isVPFormat(void)
+bool GsmSMSFormat::isVPFormat(void)
 {
     return strlen(mVPFormat) > 0;
 }

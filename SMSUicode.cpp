@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include "SmsFormat.h"
+#include "GsmSMSFormat.h"
 #include "GsmSMSUicode.h"
 
 
@@ -8,13 +8,13 @@
 
 int smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
 {
-    return SMS_Format::smsGSmEncode(sendSms, pdu, pddLen);
+    return GsmSMSFormat::smsGSmEncode(sendSms, pdu, pddLen);
 }
 
 int smsGSmDecode(const char* pdu)
 {
     int res = 0;
-    SMS_Format smsFormat(pdu);
+    GsmSMSFormat smsFormat(pdu);
     if (smsFormat.isMT()) {
         printf("this is MT SMS\n");
         if (smsFormat.isVPFormat()) {

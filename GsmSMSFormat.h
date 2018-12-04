@@ -61,9 +61,9 @@ struct SMS{
     char scaNum[128];
     DCS codeType;
 };
-class SMS_Format{
+class GsmSMSFormat{
     public:
-        SMS_Format(const char* pdu);
+        GsmSMSFormat(const char* pdu);
         int decodeSCA(char* temp);
         int decodePDUType(char* temp);
         int decodeMR(char* temp);
