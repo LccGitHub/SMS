@@ -144,7 +144,7 @@ static void ucs2_to_str(const char16_t* ucs2Data,size_t ucs2Len, unsigned char *
     }
 }
 
-static void gsm7_to_str(const unsigned char* ucs2Data,size_t ucs2Len, unsigned char * str_out)
+static void str_to_hexstr(const unsigned char* ucs2Data,size_t ucs2Len, unsigned char * str_out)
 {
     if(str_out == NULL) {
       printf("str_out is nil\n");
@@ -536,7 +536,7 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
         printf("%s,%d\n", __func__, __LINE__);
         unsigned char gsm7Str[70*4] = {0};
         int lenUcs2 = gsmEncode7bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
-        gsm7_to_str(gsm7Str, lenUcs2, ucs2Str);
+        str_to_hexstr(gsm7Str, lenUcs2, ucs2Str);
         printf("%s,%d, encode str=%s\n", __func__, __LINE__, ucs2Str);
         UDlen = strlen((char*)ucs2Str)/2;
         printf("%s,%d, UDlen = %d\n", __func__, __LINE__, UDlen);
@@ -545,7 +545,7 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
     else if (GSM8Bit == sendSms.codeType) {
         unsigned char gsm7Str[70*4] = {0};
         int lenUcs2 = gsmEncode8bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
-        gsm7_to_str(gsm7Str, lenUcs2, ucs2Str);
+        str_to_hexstr(gsm7Str, lenUcs2, ucs2Str);
         UDlen = strlen((char*)ucs2Str)/2;
         strncat(dCS, DCS_GSM8, strlen(DCS_GSM8));
     }
