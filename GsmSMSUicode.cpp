@@ -10,10 +10,10 @@
 */
 int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 {
-    int nSrc = 0; /*src cnt val*/
-    int nDst = 0; /*dst cnt val*/
-    int nChar = 0; /*id in 8 byte, range is 0-7*/
-    unsigned char nLeft = 0; /*last byte of residual data*/
+    int nSrc = 0; /* src cnt val */
+    int nDst = 0; /* dst cnt val */
+    int nChar = 0; /* id in 8 byte, range is 0-7 */
+    unsigned char nLeft = 0; /* last byte of residual data */
 
 /* 
  * 1> make a group 8 byte(in source data) to 7 byte
@@ -21,7 +21,7 @@ int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 */
     while(nSrc <= nSrcLength) {
        // Take the lowest 3 bit of src cnt val
-        nChar = nSrc & 7;/*Group processing by 8*/
+        nChar = nSrc & 7; /* Group processing by 8 */
         /* deal with each byte of src */
         if(nChar == 0) {
             /* The first byte in the group, just saved, used when the next byte is pending */
@@ -40,7 +40,7 @@ int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
         pSrc++;
         nSrc++;
     }
-    //printf("nLeft = %02x\n",nLeft);
+    // printf("nLeft = %02x\n", nLeft);
     if(nLeft != 0) {
         *pDst = nLeft;
         nDst++;
@@ -57,10 +57,10 @@ int gsmEncode7bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 */
 int gsmDecode7bit(const unsigned char* pSrc, char* pDst, int nSrcLength)
 {
-    int nSrc = 0; /*src cnt val*/
-    int nDst = 0; /*dst cnt val*/
-    int nByte = 0; /*id in 7 byte, range is 0-6*/
-    unsigned char nLeft = 0; /*last byte of residual data*/
+    int nSrc = 0; /* src cnt val */
+    int nDst = 0; /* dst cnt val */
+    int nByte = 0; /* id in 7 byte, range is 0-6 */
+    unsigned char nLeft = 0; /* last byte of residual data */
 
 /* 
  * 1> make a group 7 byte(in source data) to 8 byte
