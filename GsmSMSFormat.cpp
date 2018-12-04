@@ -8,11 +8,7 @@
 #include "GsmSMSFormat.h"
 #include "GsmSMSUicode.h"
 #include "Unicode.h"
-//using namespace std;
 
-
-//#define SAC "00"
-//static char SAC[102] = "+8613032551239";
 static char SAC[102] = "00";
 static const char * INTERNATIONAL_TYPE = "91"; 
 static const char * NATIONAL_TYPE = "81";
@@ -32,24 +28,24 @@ static const char * NATIONAL_TYPE = "81";
 */
 static void decodeFormatNumber(char * num) {
    int len = strlen(num);
-   int i;
-   char tmp;
+   int i = 0;
    for(i = 0; i < len/2; ++i) {
+       char tmp;
        tmp = num[2*i];
        num[2*i] = num[2*i + 1];
        num[2*i + 1] = tmp;
    }
 
-   if(num[strlen(num) - 1] == 'f' || num[strlen(num) - 1] == 'F') {
-    num[strlen(num) - 1] = '\0';
+   if((num[strlen(num) - 1] == 'f') || (num[strlen(num) - 1] == 'F')) {
+        num[strlen(num) - 1] = '\0';
     }
 }
 
 static void decodeFormatTime(char * num) {
    int len = strlen(num);
-   int i;
-   char tmp;
+   int i = 0;
    for(i = 0; i < len/2; ++i) {
+       char tmp;
        tmp = num[2*i];
        num[2*i] = num[2*i + 1];
        num[2*i + 1] = tmp;
@@ -60,13 +56,13 @@ static void decodeFormatTime(char * num) {
 static int XcharToInt(char val)
 {
     int res = 0;
-    if (val >= '0' && val <= '9') {
+    if ((val >= '0') && (val <= '9')) {
         res = val - '0' + 0;
     }
-    else if (val >= 'A' && val <= 'F'){
+    else if ((val >= 'A') && (val <= 'F')){
         res = val - 'A' + 10;
     }
-    else if (val >= 'a' && val <= 'f'){
+    else if ((val >= 'a') && (val <= 'f')){
         res = val - 'a' + 10;
     }
     else {
@@ -100,10 +96,10 @@ static int XcharToUcs2(const unsigned char * str, size_t len, char16_t* ucs2Data
        //my_print("str %p,ucs2Data %p\n",str,ucs2Data);
     }
     else {
-        size_t i;
-        char tmp[5] = {0};
+        size_t i = 0;
 
         for(i = 0; i < len; i += 4, index++) {
+            char tmp[5] = {0};
             memset(tmp,0,sizeof(tmp));
             memcpy(tmp,str + i,4);
             ucs2Data[index] = strtol(tmp,NULL,16);
@@ -120,9 +116,9 @@ static void formatNumber(char * num) {
       strcat(num,"F");
       len++;
    }
-   int i;
-   char tmp;
+   int i = 0;
    for(i = 0; i < len/2; ++i) {
+       char tmp;
        tmp = num[2*i];
        num[2*i] = num[2*i + 1];
        num[2*i + 1] = tmp;
@@ -135,10 +131,11 @@ static void ucs2_to_str(const char16_t* ucs2Data,size_t ucs2Len, unsigned char *
       printf("str_out is nil\n");
       return;
     }
-    int i;
-    char tmp[5] = { 0 };
+    int i = 0;
     for(i = 0; i < ucs2Len; ++i) {
+        char tmp[5] = { 0 };
        memset(tmp, 0, sizeof(tmp));
+       tmp; /* fix cppcheck */
        sprintf(tmp, "%04X", ucs2Data[i]);
        strcat((char*)str_out, tmp);
     }
@@ -150,10 +147,11 @@ static void str_to_hexstr(const unsigned char* ucs2Data,size_t ucs2Len, unsigned
       printf("str_out is nil\n");
       return;
     }
-    int i;
-    char tmp[3] = { 0 };
+    int i = 0;
     for(i = 0; i < ucs2Len; ++i) {
+        char tmp[3] = { 0 };
        memset(tmp, 0, sizeof(tmp));
+       tmp; /* fix cppcheck */
        sprintf(tmp, "%02X", ucs2Data[i]);
        strcat((char*)str_out, tmp);
     }
@@ -161,9 +159,10 @@ static void str_to_hexstr(const unsigned char* ucs2Data,size_t ucs2Len, unsigned
 
 GsmSMSFormat::GsmSMSFormat(const char* pdu)
 {
-    char temp[1024] = {0};
-    char tempLast[1024] = {0};
+    char temp[1024] = { 0 };
+    char tempLast[1024] = { 0 };
     memset(temp, 0, sizeof(temp));
+    temp; /* fix cppcheck */
     memcpy(temp, pdu, sizeof(temp)-1);
     printf("%s,%d, ori pdu[%s]\n", __func__, __LINE__, temp);
     
@@ -181,6 +180,7 @@ GsmSMSFormat::GsmSMSFormat(const char* pdu)
     
     
 }
+
 /*SCA format
 * 0891683110304105F0
 * SCA-len SCA-type SCA-addr
@@ -190,6 +190,7 @@ int GsmSMSFormat::decodeSCA(char* temp)
 {
     int lastSize = 0;
     memset(&mSCA, 0, sizeof(struct NumAddr));
+    mSCA; /* fix cppcheck */
     printf("%s,%d, temp0[%c]\n", __func__, __LINE__, temp[0]);
     printf("%s,%d, temp1[%c]\n", __func__, __LINE__, temp[1]);
     mSCA.len = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
@@ -209,6 +210,7 @@ int GsmSMSFormat::decodeSCA(char* temp)
     }
     return lastSize;
 }
+
 /*PDU-type format
 * for example "60"
 * 0110 0000
@@ -230,11 +232,12 @@ int GsmSMSFormat::decodePDUType(char* temp)
     mPDUTpe.tpRD = (temp[1] & 0x4) >>2;
     mPDUTpe.tpMTI = (temp[1] & 0x3);
     //printf("%s,%d, tpMTI[%d]\n", __func__, __LINE__, temp[1] & 0x3);
-    lastSize = BTYE1*2;/*PDU-type is 1 byte*/
+    lastSize = BTYE1*2; /* PDU-type is 1 byte */
     printf("%s,%d, PDU-type[tpRP:%d-tpUDHI:%d-tpSRR:%d-tpVPF:%d-tpRD:%d-tpMTI:%d]\n", __func__, __LINE__, mPDUTpe.tpRP, mPDUTpe.tpUDHI, mPDUTpe.tpSRR,
         mPDUTpe.tpVPF, mPDUTpe.tpRD, mPDUTpe.tpMTI);
     return lastSize;
 }
+
 /* decodeMR
 * this function only decode submit SMS
 * in PDU-tpe tpMTI:
@@ -251,10 +254,11 @@ int GsmSMSFormat::decodeMR(char* temp)
     if (mPDUTpe.tpMTI == 01) {
         sscanf(temp, "%2d", &mMR);
         printf("%s,%d, MR[%d]\n", __func__, __LINE__, mMR);
-        lastSize = 1*2;/*MR is 1 byte*/
+        lastSize = 1*2; /* MR is 1 byte */
     }
     return lastSize;
 }
+
 /* decodeOA: decode OA
 * only decode SMS-DELIVER
 */
@@ -283,10 +287,11 @@ int GsmSMSFormat::decodeOA(char* temp)
         strncat(mOA.addr, number, numLen);
 
         printf("%s,%d, OA[%d-%s-%s]\n", __func__, __LINE__, mOA.len, mOA.type, mOA.addr);
-        lastSize = numLen+2*2;; /*DA byte = DA len + 1*2*/
+        lastSize = numLen+2*2;; /* DA byte = DA len + 1*2 */
     }
     return lastSize;
 }
+
 /* decodeOA: decode DA
 * only decode SMS-SUBMIT
 */
@@ -312,18 +317,20 @@ int GsmSMSFormat::decodeDA(char* temp)
         strncat(mDA.addr, number, numLen);
 
         printf("%s,%d, DA[%d-%s-%s]\n", __func__, __LINE__, mDA.len, mDA.type, mDA.addr);
-        lastSize = mDA.len+2*2;; /*DA byte = DA len + DA_type + DA_addr*/
+        lastSize = mDA.len+2*2;; /* DA byte = DA len + DA_type + DA_addr */
     }
     return lastSize;
 }
+
 int GsmSMSFormat::decodePID(char* temp)
 {
     int lastSize = 0;
     mPID = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
     printf("%s,%d, PID[0x%2x]\n", __func__, __LINE__, mPID);
-    lastSize = 1*2;/*MR is 1 byte*/
+    lastSize = 1*2; /* MR is 1 byte */
     return lastSize;
 }
+
 /* decodeDCS
 * 1 byte: bit NO.3 & NO.2 is deoce way
 * 00: 7Bit
@@ -352,9 +359,10 @@ int GsmSMSFormat::decodeDCS(char* temp)
         printf("%s,%d, Unkonwn decode\n", __func__, __LINE__);
         mDCS = UNKNOWN;
     }
-    lastSize = 1*2;/*MR is 1 byte*/
+    lastSize = 1*2; /* MR is 1 byte */
     return lastSize;
 }
+
 /* decodeVP :decode Validity Period
 * have two format as follows;
 * 1> VP=10, this is 1 byte
@@ -411,6 +419,7 @@ int GsmSMSFormat::decodeVP(char* temp)
     }
     return lastSize;
 }
+
 /* decodeSCTS :decode Service Center TimeStamp
  * format :YY/MM/DD/HH/MM/SS/Time zone
  * only decode SMS-DELIVER
@@ -420,13 +429,14 @@ int GsmSMSFormat::decodeSCTS(char* temp)
     int lastSize = 0;
     if (mPDUTpe.tpMTI == 0) {
         sscanf(temp, "%14s", mSCTS);
-        lastSize = SCTS_MAX_BYTE*2;
+        lastSize = SCTS_MAX_BYTE * 2;
         printf("%s,%d, SCTS[%s] \n", __func__, __LINE__, mSCTS);
         decodeFormatTime(mSCTS);
         printf("%s,%d, format SCTS[%s] \n", __func__, __LINE__, mSCTS);
     }
     return lastSize;
 }
+
 /* decodeUDL :decode User-Data-Length
 *  Tp-UDHI=0, this value is none,
 *  Tp-UDHI=1, this value is 1 byte,
@@ -440,7 +450,7 @@ int GsmSMSFormat::decodeUDL(char* temp)
         //sscanf(temp, "%2d%*s", &mUDL); /*why result is temp[0]*/
     mUDL = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
     printf("%s,%d, UDL[%d] \n", __func__, __LINE__, mUDL);
-    lastSize = 1*2;
+    lastSize = 1 * 2;
     return lastSize;
 }
 
@@ -508,7 +518,7 @@ int GsmSMSFormat::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
 
 /* encode DA */
     char DATpe[3] = {0};
-    if(strstr(sendSms.num,"+")) {
+    if(strstr(sendSms.num, "+")) {
       memcpy(numTemp,sendSms.num + 1, strlen(sendSms.num) - 1);
       isInternational = true;
       strncpy(DATpe, TYPE_INTERNATIONAL, sizeof(DATpe));
@@ -517,7 +527,7 @@ int GsmSMSFormat::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
       memcpy(numTemp, sendSms.num, strlen(sendSms.num));
       strncpy(DATpe, TYPE_DOMESTIC, sizeof(DATpe));
     }
-    int DALen = strlen(numTemp); /*DA addr len is not contain F*/
+    int DALen = strlen(numTemp); /* DA addr len is not contain F */
 
     formatNumber(numTemp);
 
@@ -535,7 +545,7 @@ int GsmSMSFormat::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
     }
     else if (GSM7Bit == sendSms.codeType) {
         printf("%s,%d\n", __func__, __LINE__);
-        unsigned char gsm7Str[70*4] = {0};
+        unsigned char gsm7Str[70*4] = { 0 };
         int lenUcs2 = gsmEncode7bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
         str_to_hexstr(gsm7Str, lenUcs2, ucs2Str);
         printf("%s,%d, encode str=%s\n", __func__, __LINE__, ucs2Str);
@@ -544,7 +554,7 @@ int GsmSMSFormat::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
         strncat(dCS, DCS_GSM7, strlen(DCS_GSM7));
     }
     else if (GSM8Bit == sendSms.codeType) {
-        unsigned char gsm7Str[70*4] = {0};
+        unsigned char gsm7Str[70*4] = { 0 };
         int lenUcs2 = gsmEncode8bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
         str_to_hexstr(gsm7Str, lenUcs2, ucs2Str);
         UDlen = strlen((char*)ucs2Str)/2;
