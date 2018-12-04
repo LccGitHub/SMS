@@ -12,13 +12,17 @@
 
 
 //#define SAC "00"
-static char SAC[102] = "+8613032551239";
+//static char SAC[102] = "+8613032551239";
+static char SAC[102] = "00";
 static const char * INTERNATIONAL_TYPE = "91"; 
 static const char * NATIONAL_TYPE = "81";
 #define PDU_TYPE "31"
 #define MR "00"
 #define PID "00"
 #define DCS_STR "08"
+#define DCS_UCS2 "08"
+#define DCS_GSM7 "00"
+#define DCS_GSM8 "F6"
 #define VP "A7"
 #define NUM_INTERNAL_TYPE "A7"
 
@@ -125,17 +129,33 @@ static void formatNumber(char * num) {
    }
 }
 
-static void ucs2_to_str(const char16_t* ucs2Data,size_t ucs2Len,char * str_out) {
+static void ucs2_to_str(const char16_t* ucs2Data,size_t ucs2Len, unsigned char * str_out)
+{
     if(str_out == NULL) {
       printf("str_out is nil\n");
       return;
     }
     int i;
-    char tmp[5] = {0};
+    char tmp[5] = { 0 };
     for(i = 0; i < ucs2Len; ++i) {
-       memset(tmp,0,sizeof(tmp));
-       sprintf(tmp,"%04x",ucs2Data[i]);
-       strcat(str_out,tmp);
+       memset(tmp, 0, sizeof(tmp));
+       sprintf(tmp, "%04x", ucs2Data[i]);
+       strcat((char*)str_out, tmp);
+    }
+}
+
+static void gsm7_to_str(const unsigned char* ucs2Data,size_t ucs2Len, unsigned char * str_out)
+{
+    if(str_out == NULL) {
+      printf("str_out is nil\n");
+      return;
+    }
+    int i;
+    char tmp[3] = { 0 };
+    for(i = 0; i < ucs2Len; ++i) {
+       memset(tmp, 0, sizeof(tmp));
+       sprintf(tmp, "%02X", ucs2Data[i]);
+       strcat((char*)str_out, tmp);
     }
 }
 
@@ -502,31 +522,65 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
 
 
 /* encode UD */
-    char ucs2Str[70*4] = {0};
+    int UDlen = 0;
+    unsigned char ucs2Str[70*4] = {0};
     char16_t ucs2[70*4] = {0};
-    int lenUcs2 = gsmEncodeUcs2(sendSms.context, ucs2, strlen((const char*)sendSms.context));
-    ucs2_to_str(ucs2, lenUcs2, ucs2Str);
-    int UDlen = strlen(ucs2Str)/2;
+    char dCS[10] = {0};
+    if (USC2 == sendSms.codeType) {
+        int lenUcs2 = gsmEncodeUcs2(sendSms.context, ucs2, strlen((const char*)sendSms.context));
+        ucs2_to_str(ucs2, lenUcs2, ucs2Str);
+        UDlen = strlen((char*)ucs2Str)/2;
+        strncat(dCS, DCS_UCS2, strlen(DCS_UCS2));
+    }
+    else if (GSM7Bit == sendSms.codeType) {
+        printf("%s,%d\n", __func__, __LINE__);
+        unsigned char gsm7Str[70*4] = {0};
+        int lenUcs2 = gsmEncode7bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
+        gsm7_to_str(gsm7Str, lenUcs2, ucs2Str);
+        printf("%s,%d, encode str=%s\n", __func__, __LINE__, ucs2Str);
+        UDlen = strlen((char*)ucs2Str)/2;
+        printf("%s,%d, UDlen = %d\n", __func__, __LINE__, UDlen);
+        strncat(dCS, DCS_GSM7, strlen(DCS_GSM7));
+    }
+    else if (GSM8Bit == sendSms.codeType) {
+        unsigned char gsm7Str[70*4] = {0};
+        int lenUcs2 = gsmEncode8bit((char*)sendSms.context, gsm7Str, strlen((const char*)sendSms.context));
+        gsm7_to_str(gsm7Str, lenUcs2, ucs2Str);
+        UDlen = strlen((char*)ucs2Str)/2;
+        strncat(dCS, DCS_GSM8, strlen(DCS_GSM8));
+    }
+    else {
+        printf("%s,%d, code type is Err, will use ucs2\n", __func__, __LINE__);
+        int lenUcs2 = gsmEncodeUcs2(sendSms.context, ucs2, strlen((const char*)sendSms.context));
+        ucs2_to_str(ucs2, lenUcs2, ucs2Str);
+        UDlen = strlen((char*)ucs2Str)/2;
+        strncat(dCS, DCS_UCS2, strlen(DCS_UCS2));
+    }
+    printf("%s,%d\n", __func__, __LINE__);
 
 /* SCA PDUType MR DA-len DA-tpe DAAddr PID DCS VP UDL UD*/
 
-    if (strcmp(SAC, "0") == 0) {
+    if (strlen(sendSms.scaNum) == 0) {
+        printf("%s,%d\n", __func__, __LINE__);
         snprintf(pdu, pddLen, "%s%s%s%02X%s%s%s%s%s%02X%s", 
-            SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+            SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, dCS, VP, UDlen, ucs2Str);
+        printf("%s,%d\n", __func__, __LINE__);
     }
-    else if (SAC[0] == '+'){
+    else if (sendSms.scaNum[0] == '+'){
         char sca[56] = {0};
-        strcpy(sca, SAC+1);
+        strcpy(sca, sendSms.scaNum+1);
         formatNumber((sca));
         int SCALen = strlen(sca)/2 + 1;
         snprintf(pdu, pddLen, "%02x%s%s%s%s%02X%s%s%s%s%s%02X%s", 
-            SCALen, "91", sca, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+            SCALen, "91", sca, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, dCS, VP, UDlen, ucs2Str);
     }
     else {
-        int SCALen = strlen(SAC)/2 + 1 + 1;
-        formatNumber((SAC));
+        char sca[56] = {0};
+        strcpy(sca, sendSms.scaNum);
+        int SCALen = strlen(sca)/2 + 1 + 1;
+        formatNumber(sca);
         snprintf(pdu, pddLen, "%02x%s%s%s%s%02X%s%s%s%s%s%02X%s", 
-            SCALen, "81", SAC, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, DCS_STR, VP, UDlen, ucs2Str);
+            SCALen, "81", sca, PDU_TYPE, MR, DALen, DATpe, numTemp, PID, dCS, VP, UDlen, ucs2Str);
     }
 
     printf("Encode SMS PDU\n");
@@ -534,4 +588,14 @@ int SMS_Format::smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen)
     return strlen(pdu);
 }
 
+
+bool SMS_Format::isMT(void)
+{
+    return mPDUTpe.tpMTI == 1;
+}
+
+bool SMS_Format::isVPFormat(void)
+{
+    return strlen(mVPFormat) > 0;
+}
 

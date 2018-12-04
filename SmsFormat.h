@@ -59,6 +59,7 @@ struct SMS{
     char num[128];
     unsigned char context[140];
     char scaNum[128];
+    DCS codeType;
 };
 class SMS_Format{
     public:
@@ -74,6 +75,8 @@ class SMS_Format{
         int decodeSCTS(char* temp);
         int decodeUDL(char* temp);
         int decodeUD(char* temp);
+        bool isMT(void);
+        bool isVPFormat(void);
 
         static int smsGSmEncode(const SMS sendSms, char* pdu, size_t pddLen);
 
