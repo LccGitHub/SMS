@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include "SmsFormat.h"
-#include "Gsm7BitCode.h"
+#include "GsmSMSUicode.h"
 
 
 

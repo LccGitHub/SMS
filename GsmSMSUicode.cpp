@@ -1,5 +1,5 @@
 #include <string.h>
-#include "Gsm7BitCode.h"
+#include "GsmSMSUicode.h"
 
 
 /* @Brief Encode Gsm7Bit

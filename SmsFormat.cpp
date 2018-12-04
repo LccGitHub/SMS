@@ -6,7 +6,7 @@
  ************************************************************************/
 #include <string.h>
 #include "SmsFormat.h"
-#include "Gsm7BitCode.h"
+#include "GsmSMSUicode.h"
 #include "Unicode.h"
 //using namespace std;
 
