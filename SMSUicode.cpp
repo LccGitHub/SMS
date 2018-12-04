@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include "SmsFormat.h"
+#include "SMSFormat.h"
 #include "GsmSMSUicode.h"
 
 

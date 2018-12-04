@@ -5,7 +5,7 @@
 	> Created Time: Sat 29 Sep 2018 01:50:04 PM CST
  ************************************************************************/
 #include <string.h>
-#include "SmsFormat.h"
+#include "SMSFormat.h"
 #include "GsmSMSUicode.h"
 #include "Unicode.h"
 //using namespace std;
