@@ -15,8 +15,8 @@
 #define SCA_MAX_BYTE 12
 #define PDU_TYPE_BYTE 1
 #define MR_MAX_BYTE 1
-#define OA_MAX_BYTE 12
-#define DA_MAX_BYTE 12
+#define OA_MAX_BYTE 15
+#define DA_MAX_BYTE 15
 #define PID_MAX_BYTE 1
 #define DCS_MAX_BYTE 1
 #define SCTS_MAX_BYTE 7

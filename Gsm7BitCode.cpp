@@ -118,8 +118,7 @@ int gsmEncode8bit(const char* pSrc, unsigned char* pDst, int nSrcLength)
 int gsmDecode8bit(const unsigned char* pSrc, char* pDst, int nSrcLength)
 {
     memcpy(pDst, pSrc, nSrcLength);
-    *pDst = '\0';
-
+    pDst[nSrcLength] = '\0';
     return nSrcLength;
 }
 

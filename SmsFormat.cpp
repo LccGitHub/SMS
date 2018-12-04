@@ -205,7 +205,7 @@ int SMS_Format::decodePDUType(char* temp)
     mPDUTpe.tpRP = (temp[0] & 0x8) >> 3;
     mPDUTpe.tpUDHI = (temp[0] & 0x4) >>2;
     mPDUTpe.tpSRR = (temp[0] & 0x2) >> 1;
-    mPDUTpe.tpVPF = (temp[0] & 0x1) + ((temp[1] & 0x8) >> 3);
+    mPDUTpe.tpVPF = ((temp[0] & 0x1) * 2) + ((temp[1] & 0x8) >> 3);
     //printf("%s,%d, VPT[%d-%d-%d]\n", __func__, __LINE__, temp[0] & 0x1, temp[1] & 0x8, (temp[0] & 0x1) + (temp[1] & 0x8));
     mPDUTpe.tpRD = (temp[1] & 0x4) >>2;
     mPDUTpe.tpMTI = (temp[1] & 0x3);
@@ -246,13 +246,22 @@ int SMS_Format::decodeOA(char* temp)
         printf("%s,%d, OA[0][%c]\n", __func__, __LINE__, temp[0]);
         printf("%s,%d, OA[1][%c]\n", __func__, __LINE__, temp[1]);
         mOA.len = XcharToInt(temp[0])*16 + XcharToInt(temp[1]);
-        if (mOA.len %2 !=0)
+        if (mOA.len %2 !=0) {
             mOA.len = mOA.len + 1;
+        }
         sscanf(temp + 2, "%2s",  mOA.type);
         int numLen = mOA.len; /* this is different with SCA.len, this is OA.addr len not byte */
-        memcpy(mOA.addr, temp+BTYE2*2, numLen);
-        printf("%s,%d, OA[%d-%s-%s]\n", __func__, __LINE__, mOA.len, mOA.type, mOA.addr);
-        decodeFormatNumber(mOA.addr);
+        char number[DA_MAX_BYTE*2+1] = { 0 };
+        memset(number, 0, sizeof(number));
+        strncat(number, temp+BTYE2*2, numLen);
+        printf("%s,%d, OA[%d-%s-%s]\n", __func__, __LINE__, mOA.len, mOA.type, number);
+        decodeFormatNumber(number);
+
+        if (strncmp(TYPE_INTERNATIONAL, mOA.type, strlen(TYPE_INTERNATIONAL)) == 0) {
+            strncat(mOA.addr, "+", 1);
+        }
+        strncat(mOA.addr, number, numLen);
+
         printf("%s,%d, OA[%d-%s-%s]\n", __func__, __LINE__, mOA.len, mOA.type, mOA.addr);
         lastSize = numLen+2*2;; /*DA byte = DA len + 1*2*/
     }
@@ -271,9 +280,17 @@ int SMS_Format::decodeDA(char* temp)
             mDA.len = mDA.len + 1;
         sscanf(temp, "%*2s%2s", mDA.type);
         int numLen = mDA.len; /* this is different with SCA.len, this is OA.addr len not byte */
-        memcpy(mDA.addr, temp+BTYE2*2, numLen);
-        printf("%s,%d, DA[%d-%s-%s]\n", __func__, __LINE__, mDA.len, mDA.type, mDA.addr);
-        decodeFormatNumber(mDA.addr);
+        char number[DA_MAX_BYTE*2+1] = { 0 };
+        memset(number, 0, sizeof(number));
+        strncat(number, temp+BTYE2*2, numLen);
+        printf("%s,%d, DA[%d-%s-%s]\n", __func__, __LINE__, mDA.len, mDA.type, number);
+        decodeFormatNumber(number);
+
+        if (strncmp(TYPE_INTERNATIONAL, mDA.type, strlen(TYPE_INTERNATIONAL)) == 0) {
+            strncat(mDA.addr, "+", 1);
+        }
+        strncat(mDA.addr, number, numLen);
+
         printf("%s,%d, DA[%d-%s-%s]\n", __func__, __LINE__, mDA.len, mDA.type, mDA.addr);
         lastSize = mDA.len+2*2;; /*DA byte = DA len + DA_type + DA_addr*/
     }
@@ -335,9 +352,34 @@ int SMS_Format::decodeVP(char* temp)
         printf("%s,%d, no need to decode Vp \n", __func__, __LINE__);
     }
     else if (mPDUTpe.tpVPF== 0x1) {
-        sscanf(temp, "%2d", &mVP);
+        printf("%s,%d, Vp is Reserved \n", __func__, __LINE__);
+    }
+    else if (mPDUTpe.tpVPF== 0x2) {
+        sscanf(temp, "%2s", mVPFormat);
+        char *endptr;
+        mVP = strtol(mVPFormat, &endptr, 16);
+        printf("%s,%d, mVP[%d ] \n", __func__, __LINE__, mVP);
+        if ((mVP >=0x00) && (mVP <= 0x8F)) {
+            mVP = (mVP + 1) * 5; /* range: 5min ~ 12 hour */
+            printf("%s,%d, mVP[%d Min] \n", __func__, __LINE__, mVP);
+        }
+        else if ((mVP >=0x90) && (mVP <= 0xA7)) {
+            mVP = 12 * 60+ (mVP - 143) * 30; /* range: 12hour ~ 24 hour */
+            printf("%s,%d, mVP[%d Hour] \n", __func__, __LINE__, mVP/60);
+        }
+        else if ((mVP >=0xA8) && (mVP <= 0xC4)) {
+            mVP = (mVP - 166) * 1 * 24 * 60; /* range: 1day ~ 7 day */
+            printf("%s,%d, mVP[%d Day] \n", __func__, __LINE__, mVP/(24 * 60));
+        }
+        else if ((mVP >=0xC5) && (mVP <= 0xFF)) {
+            mVP = (mVP - 192) * 1 * 7* 24 * 60; /* range: 1week ~  */
+            printf("%s,%d, mVP[%d Week] \n", __func__, __LINE__, mVP/(7* 24 * 60));
+        }
+        else {
+        }
         lastSize = 1*2;
-        printf("%s,%d, mVP[%d] \n", __func__, __LINE__, mVP);
+        printf("%s,%d, mVP[%s] \n", __func__, __LINE__, mVPFormat);
+        memset(mVPFormat, 0, sizeof(mVPFormat));
     }
     else if (mPDUTpe.tpVPF== 0x3) {
         sscanf(temp, "%14s", mVPFormat);
@@ -413,10 +455,9 @@ int SMS_Format::decodeUD(char* temp)
     }
     else if (mDCS == GSM8Bit) {
         unsigned char src[140] = {0};
-        XcharToAcii(mUD, src);
 
         memset(mSMSContext, 0, sizeof(mSMSContext));
-        gsmDecode8bit(src, mSMSContext, strlen((const char*)src));
+        gsmDecode8bit(mUD, mSMSContext, strlen((const char*)mUD));
         printf("%s,%d, SMS 8 BitContext \n", __func__, __LINE__);
     }
     else if (mDCS == USC2) {
