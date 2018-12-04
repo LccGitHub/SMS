@@ -1,5 +1,9 @@
 #include <stdbool.h>
+<<<<<<< HEAD:SMSUicode.cpp
 #include "GsmSMSFormat.h"
+=======
+#include "SMSFormat.h"
+>>>>>>> 43396bc1533a9ac790cc4fa235389c039e7dd0e9:SMSUicode.cpp
 #include "GsmSMSUicode.h"
 
 
